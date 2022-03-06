@@ -86,7 +86,7 @@ int main(int argc, const char * argv[]) {
     // Store results
     store_fractions(mol_frac_res,
                     time_params,
-					num_components);
+                    num_components);
 
     // Free allocated data
     delete_D(p_params.D, num_components);

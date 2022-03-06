@@ -268,7 +268,7 @@ void store_fractions(mol_frac_res_t mol_frac_res, t_params_t t_params, int n) {
     double t = t_params.to;
 
     for(int i = 0; i < nt; ++i) {
-    	t = t + dt;
+        t = t + dt;
         fprintf(file_ptr1, "%f\t", t);
         fprintf(file_ptr2, "%f\t", t);
         for(int c = 0; c < n; ++c) {

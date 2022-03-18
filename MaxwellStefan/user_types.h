@@ -8,7 +8,7 @@
 #ifndef user_types_h
 #define user_types_h
 
-const int NUM_TIME_STEPS = 80;
+const int NUM_TIME_STEPS = 20;
 const double INF = 3e8;
 const double RANGE = 1e3;
 const double DEC_FAC = 10;
@@ -18,6 +18,7 @@ const int NUM_GUESS = 40;
 typedef struct grid_properties {
     double L;
     double dz;
+    int nz;
 } g_props_t;
 
 typedef struct flux_bounds {

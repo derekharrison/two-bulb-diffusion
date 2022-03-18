@@ -54,8 +54,8 @@ double dx_dz(int component,
     return res;
 }
 
-vector<double> compute_composition(e_params_t e_params,
-                                   vec_d_t J_vec) {
+vec_d_t compute_composition(e_params_t e_params,
+                            vec_d_t J_vec) {
 
 
     vec_d_t mol_frac = e_params.b_fracs.mol_frac;
@@ -150,9 +150,9 @@ void compute_fluxes_rec(e_params_t e_params,
     }
 }
 
-std::vector<double> compute_fluxes(b_fracs_t b_fracs,
-                                   p_params_t p_params,
-                                   g_props_t g_props) {
+vec_d_t compute_fluxes(b_fracs_t b_fracs,
+                       p_params_t p_params,
+                       g_props_t g_props) {
 
     double min_dist = INF;
     int n = (int) b_fracs.mol_frac.size();

@@ -52,10 +52,13 @@ double dx_dz(int component,
     return res;
 }
 
-std::vector<double> compute_composition(std::vector<double> mol_frac,
-                                        p_params_t p_params,
-                                        std::vector<double> J_vec,
-                                        g_props_t g_props) {
+std::vector<double> compute_composition(e_params_t e_params,
+                                        std::vector<double> J_vec) {
+
+
+    std::vector<double> mol_frac = e_params.b_fracs.mol_frac;
+    p_params_t p_params = e_params.p_params;
+    g_props_t g_props = e_params.g_props;
     
     int n = (int) mol_frac.size();
     std::vector<double> mol_frac_E;
@@ -90,19 +93,18 @@ double error(std::vector<double> mol_frac,
     return res;
 }
 
-void compute_fluxes_rec(b_fracs_t b_fracs,
-                        p_params_t p_params,
-                        g_props_t g_props,
-                        int flux_comp,
+void compute_fluxes_rec(e_params_t e_params,
                         std::vector<double> J_vec_in,
-                        f_bounds_t * J_vec_bounds,
+                        std::vector<f_bounds_t> & J_vec_bounds,
                         double & min_dist,
-                        double * J_vec) {
-    
+                         std::vector<double> & J_vec) {
+
+    b_fracs_t b_fracs = e_params.b_fracs;
+
     int n = (int) b_fracs.mol_frac.size();
     int m = (int) J_vec_in.size();
-    double min_J = J_vec_bounds[flux_comp].lower_bound;
-    double max_J = J_vec_bounds[flux_comp].upper_bound;
+    double min_J = J_vec_bounds[m].lower_bound;
+    double max_J = J_vec_bounds[m].upper_bound;
     
     // Number of guesses per component
     int ng = NUM_GUESS;
@@ -115,8 +117,7 @@ void compute_fluxes_rec(b_fracs_t b_fracs,
             double J_elem = min_J + i * del_loc;
             std::vector<double> J_vec_loc = J_vec_in;
             J_vec_loc.push_back(J_elem);
-            compute_fluxes_rec(b_fracs, p_params, g_props, flux_comp + 1,
-                               J_vec_loc, J_vec_bounds, min_dist, J_vec);
+            compute_fluxes_rec(e_params, J_vec_loc, J_vec_bounds, min_dist, J_vec);
         }
     }
     
@@ -128,13 +129,12 @@ void compute_fluxes_rec(b_fracs_t b_fracs,
             j_elem_f = j_elem_f - j_elem;
         }
         J_vec_loc.push_back(j_elem_f);
-        compute_fluxes_rec(b_fracs, p_params, g_props, flux_comp + 1,
-                           J_vec_loc, J_vec_bounds, min_dist, J_vec);
+        compute_fluxes_rec(e_params, J_vec_loc, J_vec_bounds, min_dist, J_vec);
     }
     
     // Compute the minimum flux vector J
     if(m == n) {
-        std::vector<double> mol_frac_E_loc = compute_composition(b_fracs.mol_frac, p_params, J_vec_in, g_props);
+        std::vector<double> mol_frac_E_loc = compute_composition(e_params, J_vec_in);
         double err = error(b_fracs.mol_frac_E, mol_frac_E_loc);
         if(err < min_dist) {
             for(int k = 0; k < n; ++k) {
@@ -145,37 +145,45 @@ void compute_fluxes_rec(b_fracs_t b_fracs,
     }
 }
 
-double * compute_fluxes(b_fracs_t b_fracs,
-                        p_params_t p_params,
-                        g_props_t g_props) {
-    
+std::vector<double> compute_fluxes(b_fracs_t b_fracs,
+                                   p_params_t p_params,
+                                   g_props_t g_props) {
+
     double min_dist = INF;
     int n = (int) b_fracs.mol_frac.size();
     
-    double * J_vec = new double[n];
+    e_params_t e_params;
+    e_params.b_fracs = b_fracs;
+    e_params.p_params = p_params;
+    e_params.g_props = g_props;
+
+    std::vector<double> J_vec;
     std::vector<double> J_vec_in;
-    
-    f_bounds_t * J_vec_bounds = new f_bounds_t[n];
+    std::vector<f_bounds_t> J_vec_bounds;
     
     // Set the range, decrease factor and max number of iterations
     double range = RANGE;
     double dec_fac = DEC_FAC;
     int num_iterations = NUM_SCALE;
     
+    // Initialize range bounds and flux vector
     for(int i = 0; i < n; ++i) {
-        J_vec_bounds[i].upper_bound = range;
-        J_vec_bounds[i].lower_bound = -range;
+        f_bounds_t f_bounds;
+        f_bounds.upper_bound = range;
+        f_bounds.lower_bound = -range;
+        J_vec_bounds.push_back(f_bounds);
+        J_vec.push_back(0);
     }
     
     // Compute fluxes
     int it = 0;
+
     while(it < num_iterations) {
         
         // Reset min_dist for calculation
         min_dist = INF;
         
-        compute_fluxes_rec(b_fracs, p_params, g_props, 0,
-                           J_vec_in, J_vec_bounds, min_dist, J_vec);
+        compute_fluxes_rec(e_params, J_vec_in, J_vec_bounds, min_dist, J_vec);
         
         for(int i = 0; i < n; ++i) {
             J_vec_bounds[i].upper_bound = J_vec[i] + range;
@@ -215,7 +223,7 @@ mol_frac_res_t compute_fracs(p_params_t p_params,
     mol_frac_res_t mol_frac_results;
     
     while(t < t_params.tf) {
-        double * J_vec = compute_fluxes(b_fracs, p_params, g_props);
+        std::vector<double> J_vec = compute_fluxes(b_fracs, p_params, g_props);
         
         for(int i = 0; i < n; ++i) {
             b_fracs.mol_frac[i] = b_fracs.mol_frac[i] - A * J_vec[i] * dt / (p_params.ct * b_props.V);
@@ -226,8 +234,6 @@ mol_frac_res_t compute_fracs(p_params_t p_params,
         mol_frac_results.mol_frac2.push_back(b_fracs.mol_frac_E);
         
         t = t + dt;
-        
-        delete [] J_vec;
     }
     
     return mol_frac_results;

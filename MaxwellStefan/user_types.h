@@ -50,4 +50,10 @@ typedef struct bulb_mol_fractions {
     std::vector<double> mol_frac_E;
 } b_fracs_t;
 
+typedef struct experiment_params {
+    b_fracs_t b_fracs;
+    p_params_t p_params;
+    g_props_t g_props;
+} e_params_t;
+
 #endif /* user_types_h */

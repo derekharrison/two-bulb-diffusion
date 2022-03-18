@@ -56,4 +56,7 @@ typedef struct experiment_params {
     g_props_t g_props;
 } e_params_t;
 
+typedef std::vector<double> vec_d_t;
+typedef std::vector<f_bounds_t> vec_fb_t;
+
 #endif /* user_types_h */

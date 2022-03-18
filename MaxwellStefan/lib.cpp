@@ -14,9 +14,6 @@
 
 using namespace std;
 
-typedef vector<double> vec_d_t;
-typedef vector<f_bounds_t> vec_fb_t;
-
 double ** create_D(int n) {
     double ** D = new double * [n];
     

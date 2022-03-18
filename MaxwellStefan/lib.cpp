@@ -115,8 +115,10 @@ void compute_fluxes_rec(e_params_t e_params,
     if(m < n - 1) {
         for(int i = 0; i < ng; ++i) {
             double J_elem = min_J + i * del_loc;
-            std::vector<double> J_vec_loc = J_vec_in;
+            vec_d_t J_vec_loc = J_vec_in;
+
             J_vec_loc.push_back(J_elem);
+
             compute_fluxes_rec(e_params, J_vec_loc, J_vec_bounds, min_dist, J_vec);
         }
     }

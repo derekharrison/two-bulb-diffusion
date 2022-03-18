@@ -64,10 +64,9 @@ vector<double> compute_composition(e_params_t e_params,
     
     int n = (int) mol_frac.size();
     vec_d_t mol_frac_E;
+    vec_d_t mol_frac_in = mol_frac;
     
     int num_steps = g_props.L / g_props.dz;
-    
-    vec_d_t mol_frac_in = mol_frac;
     
     for(int c = 0; c < n; ++c) {
         for(int s = 0; s < num_steps; ++s)
@@ -191,12 +190,12 @@ std::vector<double> compute_fluxes(b_fracs_t b_fracs,
         
         compute_fluxes_rec(e_params, J_vec_in, J_vec_bounds, min_dist, J_vec);
         
+        range = range / dec_fac;
+
         for(int i = 0; i < n; ++i) {
             J_vec_bounds[i].upper_bound = J_vec[i] + range;
             J_vec_bounds[i].lower_bound = J_vec[i] - range;
         }
-        
-        range = range / dec_fac;
         
         ++it;
     }

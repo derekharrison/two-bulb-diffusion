@@ -12,6 +12,11 @@
 #include "lib.hpp"
 #include "user_types.h"
 
+using namespace std;
+
+typedef vector<double> vec_d_t;
+typedef vector<f_bounds_t> vec_fb_t;
+
 double ** create_D(int n) {
     double ** D = new double * [n];
     
@@ -34,9 +39,9 @@ void delete_D(double ** D, int n) {
 }
 
 double dx_dz(int component,
-             std::vector<double> mol_frac,
+             vec_d_t mol_frac,
              p_params_t p_params,
-             std::vector<double> J_vec) {
+             vec_d_t J_vec) {
     
     int n = (int) mol_frac.size();
     
@@ -52,20 +57,20 @@ double dx_dz(int component,
     return res;
 }
 
-std::vector<double> compute_composition(e_params_t e_params,
-                                        std::vector<double> J_vec) {
+vector<double> compute_composition(e_params_t e_params,
+                                   vec_d_t J_vec) {
 
 
-    std::vector<double> mol_frac = e_params.b_fracs.mol_frac;
+    vec_d_t mol_frac = e_params.b_fracs.mol_frac;
     p_params_t p_params = e_params.p_params;
     g_props_t g_props = e_params.g_props;
     
     int n = (int) mol_frac.size();
-    std::vector<double> mol_frac_E;
+    vec_d_t mol_frac_E;
     
     int num_steps = g_props.L / g_props.dz;
     
-    std::vector<double> mol_frac_in = mol_frac;
+    vec_d_t mol_frac_in = mol_frac;
     
     for(int c = 0; c < n; ++c) {
         for(int s = 0; s < num_steps; ++s) {
@@ -80,8 +85,8 @@ std::vector<double> compute_composition(e_params_t e_params,
     return mol_frac_E;
 }
 
-double error(std::vector<double> mol_frac,
-             std::vector<double> mol_frac_E) {
+double error(vec_d_t mol_frac,
+             vec_d_t mol_frac_E) {
     
     double res = 0.0;
     
@@ -94,10 +99,10 @@ double error(std::vector<double> mol_frac,
 }
 
 void compute_fluxes_rec(e_params_t e_params,
-                        std::vector<double> J_vec_in,
-                        std::vector<f_bounds_t> & J_vec_bounds,
+                        vec_d_t J_vec_in,
+                        vec_fb_t & J_vec_bounds,
                         double & min_dist,
-                         std::vector<double> & J_vec) {
+                        vec_d_t & J_vec) {
 
     b_fracs_t b_fracs = e_params.b_fracs;
 
@@ -123,7 +128,7 @@ void compute_fluxes_rec(e_params_t e_params,
     
     // Compute the last flux component of J
     if(m == n - 1) {
-        std::vector<double> J_vec_loc = J_vec_in;
+        vec_d_t J_vec_loc = J_vec_in;
         double j_elem_f = 0.0;
         for(auto j_elem : J_vec_in) {
             j_elem_f = j_elem_f - j_elem;
@@ -134,7 +139,7 @@ void compute_fluxes_rec(e_params_t e_params,
     
     // Compute the minimum flux vector J
     if(m == n) {
-        std::vector<double> mol_frac_E_loc = compute_composition(e_params, J_vec_in);
+        vec_d_t mol_frac_E_loc = compute_composition(e_params, J_vec_in);
         double err = error(b_fracs.mol_frac_E, mol_frac_E_loc);
         if(err < min_dist) {
             for(int k = 0; k < n; ++k) {
@@ -157,9 +162,9 @@ std::vector<double> compute_fluxes(b_fracs_t b_fracs,
     e_params.p_params = p_params;
     e_params.g_props = g_props;
 
-    std::vector<double> J_vec;
-    std::vector<double> J_vec_in;
-    std::vector<f_bounds_t> J_vec_bounds;
+    vec_d_t J_vec;
+    vec_d_t J_vec_in;
+    vec_fb_t J_vec_bounds;
     
     // Set the range, decrease factor and max number of iterations
     double range = RANGE;
@@ -198,8 +203,10 @@ std::vector<double> compute_fluxes(b_fracs_t b_fracs,
     return J_vec;
 }
 
-std::vector<double> convert_to_vec(double * J_vec, int n) {
-    std::vector<double> J_vec_inp;
+vec_d_t convert_to_vec(double * J_vec, int n) {
+
+    vec_d_t J_vec_inp;
+
     for(int i = 0; i < n; ++i)
         J_vec_inp.push_back(J_vec[i]);
     
@@ -245,16 +252,16 @@ void print_fractions(mol_frac_res_t mol_frac_res, t_params_t t_params, int n) {
     double dt = (t_params.tf - t_params.to) / nt;
     
     for(int i = 0; i < nt; ++i) {
-        std::cout << "bulb1 composition at t " << (i + 1) * dt;
+        cout << "bulb1 composition at t " << (i + 1) * dt;
         for(int c = 0; c < n; ++c) {
-            std::cout << ", " << mol_frac_res.mol_frac1[i][c];
+            cout << ", " << mol_frac_res.mol_frac1[i][c];
         }
-        std::cout << std::endl;
-        std::cout << "bulb2 composition at t " << (i + 1) * dt;
+        cout << endl;
+        cout << "bulb2 composition at t " << (i + 1) * dt;
         for(int c = 0; c < n; ++c) {
-            std::cout << ", " << mol_frac_res.mol_frac2[i][c];
+            cout << ", " << mol_frac_res.mol_frac2[i][c];
         }
-        std::cout << std::endl;
+        cout << endl;
     }
 }
 
